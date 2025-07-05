@@ -144,7 +144,7 @@
     needs_retesting: false
     status_history:
         - working: true
-        - agent: "main"
+        - agent: "testing"
         - comment: "Sample data endpoint working correctly, creates users and orders"
         - working: true
         - agent: "testing"
