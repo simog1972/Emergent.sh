@@ -183,15 +183,18 @@
 
   - task: "Order details with BOM breakdown"
     implemented: true
-    working: "unknown"
+    working: true
     file: "frontend/src/App.js"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "unknown"
         - agent: "main"
         - comment: "BOM details component implemented with item breakdown and status colors"
+        - working: true
+        - agent: "testing"
+        - comment: "Order details with BOM breakdown is working correctly. Clicking on an order displays its details including BOM items with their status, quantity, and delivery information. Status colors are correctly applied based on item status (ready, pending, in_transit)."
 
 ## metadata:
   created_by: "main_agent"
