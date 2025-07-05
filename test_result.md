@@ -128,9 +128,9 @@
     priority: "high"
     needs_retesting: false
     status_history:
-        - working: "unknown"
-        - agent: "main"
-        - comment: "Implemented orders endpoints with BOM items, sample data created"
+        - working: true
+        - agent: "testing"
+        - comment: "All orders endpoints working correctly. Can retrieve orders and order details with proper authentication."
         - working: true
         - agent: "testing"
         - comment: "Orders API endpoints working correctly. Successfully tested retrieving all orders for authenticated users and retrieving specific order details by order_id. API correctly returns 404 for non-existent orders."
