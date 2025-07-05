@@ -207,7 +207,7 @@
     - "Authentication system - User registration and login"
     - "Orders API - CRUD operations for orders"
   stuck_tasks: []
-  test_all: true
+  test_all: false
   test_priority: "high_first"
 
 ## agent_communication:
