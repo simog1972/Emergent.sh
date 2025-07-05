@@ -203,6 +203,6 @@
 
 ## agent_communication:
     - agent: "main"
-    - message: "Initial implementation complete. Authentication system and orders API need testing. Login form not working properly - need to test backend login endpoint and fix authentication flow."
+    - message: "Backend testing complete - all APIs working correctly. Frontend login issue identified. User requested auto-testing of frontend to fix login functionality."
     - agent: "testing"
     - message: "Completed comprehensive testing of all backend API endpoints. Created backend_test.py to test authentication, orders, and sample data endpoints. All backend API endpoints are working correctly. The issue with the frontend login not working is likely related to how the frontend is handling the JWT token or making API requests, not with the backend API itself."
