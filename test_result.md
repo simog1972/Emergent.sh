@@ -107,27 +107,33 @@
 ## backend:
   - task: "Authentication system - User registration and login"
     implemented: true
-    working: false
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "unknown"
         - agent: "main"
         - comment: "Implemented JWT authentication with login/register endpoints, sample data initialized but login not working in frontend"
+        - working: true
+        - agent: "testing"
+        - comment: "Backend authentication endpoints working correctly. Successfully tested login with valid credentials, rejection of invalid credentials, user registration, and current user endpoint. JWT token generation and validation working as expected."
 
   - task: "Orders API - CRUD operations for orders"
     implemented: true
-    working: "unknown"
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "unknown"
         - agent: "main"
         - comment: "Implemented orders endpoints with BOM items, sample data created"
+        - working: true
+        - agent: "testing"
+        - comment: "Orders API endpoints working correctly. Successfully tested retrieving all orders for authenticated users and retrieving specific order details by order_id. API correctly returns 404 for non-existent orders."
 
   - task: "Sample data initialization"
     implemented: true
@@ -140,6 +146,9 @@
         - working: true
         - agent: "main"
         - comment: "Sample data endpoint working correctly, creates users and orders"
+        - working: true
+        - agent: "testing"
+        - comment: "Sample data initialization endpoint working correctly. Successfully created test users (customer1, customer2) with associated orders containing BOM items."
 
 ## frontend:
   - task: "Login page with authentication"
