@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Builds a signed APK without Gradle, using the Android tools packaged by Debian/Ubuntu:
-#   sudo apt-get install aapt apksigner zipalign dalvik-exchange android-sdk-platform-23
-# plus a full Android 14 framework jar (from Maven Central) to compile against newer APIs.
+#   sudo apt-get install aapt apksigner zipalign dalvik-exchange
+# plus a full Android 14 framework jar (from Maven Central): its classes and resource table
+# are what we compile and link against.
 # Output: build/ClipManager.apk
 set -euo pipefail
 
@@ -10,7 +11,6 @@ ROOT=$(pwd)
 SRC=app/src/main
 OUT=build
 TOOLS=${ANDROID_BUILD_TOOLS:-/usr/lib/android-sdk/build-tools/debian}
-PLATFORM_JAR=${ANDROID_PLATFORM_JAR:-/usr/lib/android-sdk/platforms/android-23/android.jar}
 CACHE=${CLIPMANAGER_CACHE:-$HOME/.cache/clipmanager}
 FRAMEWORK_JAR=$CACHE/android-all-14.jar
 FRAMEWORK_URL=https://repo1.maven.org/maven2/org/robolectric/android-all/14-robolectric-10818077/android-all-14-robolectric-10818077.jar
@@ -30,7 +30,7 @@ mkdir -p "$OUT/gen" "$OUT/classes"
 echo "[1/5] Resources"
 "$TOOLS/aapt2" compile --dir "$SRC/res" -o "$OUT/res.zip"
 "$TOOLS/aapt2" link -o "$OUT/unsigned.apk" \
-    -I "$PLATFORM_JAR" \
+    -I "$FRAMEWORK_JAR" \
     --manifest "$SRC/AndroidManifest.xml" \
     --java "$OUT/gen" \
     --min-sdk-version 24 --target-sdk-version 34 \

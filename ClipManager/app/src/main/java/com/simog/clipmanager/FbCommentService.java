@@ -58,7 +58,14 @@ public class FbCommentService extends AccessibilityService {
     private WindowManager.LayoutParams barParams;
     private TextView label;
     private Button mainButton;
-    private Button moreButton;
+    private Button autoButton;
+    /** AUTO: open "Altro"/more comments, read, scroll, repeat until the end, then save. */
+    private boolean auto;
+    private int autoSteps, openRounds, sameCount, noFbCount;
+    private String lastSig = "", prevSig = null;
+    private boolean lastHadFacebook;
+    /** Collapsed comment texts already tapped, so a tap that doesn't expand isn't repeated. */
+    private final java.util.HashSet<String> tapped = new java.util.HashSet<>();
 
     public static FbCommentService get() {
         return instance;
@@ -117,14 +124,36 @@ public class FbCommentService extends AccessibilityService {
         collector = new FbParser.Collector();
         texts.clear();
         debug.clear();
+        tapped.clear();
         showBar();
         updateBar();
         handler.removeCallbacks(tick);
         handler.post(tick);
     }
 
+    /** Hands-free: reads the whole post by itself and saves when it reaches the end. */
+    public void startAuto() {
+        start();
+        auto = true;
+        autoSteps = 0;
+        openRounds = 0;
+        sameCount = 0;
+        noFbCount = 0;
+        prevSig = null;
+        handler.removeCallbacks(tick);
+        handler.removeCallbacks(autoStep);
+        handler.postDelayed(autoStep, 600);
+        updateBar();
+    }
+
+    public boolean isAuto() {
+        return auto;
+    }
+
     public void stop() {
         if (!recording) return;
+        auto = false;
+        handler.removeCallbacks(autoStep);
         handler.removeCallbacks(tick);
         scanNow(); // last look at the current screen
         recording = false;
@@ -135,12 +164,91 @@ public class FbCommentService extends AccessibilityService {
     private final Runnable tick = new Runnable() {
         @Override
         public void run() {
-            if (!recording) return;
+            if (!recording || auto) return;
+            // manual mode: open any "Altro" in view; the next tick reads the full texts
+            expandMore();
             scanNow();
             handler.removeCallbacks(tick);
             handler.postDelayed(tick, SCAN_EVERY_MS);
         }
     };
+
+    private final Runnable autoStep = new Runnable() {
+        @Override
+        public void run() {
+            if (!recording || !auto) return;
+            autoSteps++;
+            int opened = expandMore();
+            if (opened > 0 && openRounds < 3) {
+                openRounds++;
+                handler.postDelayed(autoStep, 1000); // let the texts/comments load
+                return;
+            }
+            openRounds = 0;
+            scanNow();
+            // left Facebook (or it navigated away): stop rather than scroll something else
+            noFbCount = lastHadFacebook ? 0 : noFbCount + 1;
+            sameCount = lastSig.equals(prevSig) ? sameCount + 1 : 0;
+            prevSig = lastSig;
+            if (sameCount >= 3 || noFbCount >= 2 || autoSteps > 600) {
+                stop();
+                return;
+            }
+            scrollDown();
+            handler.postDelayed(autoStep, 1400);
+        }
+    };
+
+    /** Swipes up by ~40% of the screen (slow, no fling) so consecutive screens overlap. */
+    private void scrollDown() {
+        android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
+        android.graphics.Path p = new android.graphics.Path();
+        float x = dm.widthPixels * 0.35f;
+        p.moveTo(x, dm.heightPixels * 0.72f);
+        p.lineTo(x, dm.heightPixels * 0.32f);
+        try {
+            android.accessibilityservice.GestureDescription g =
+                    new android.accessibilityservice.GestureDescription.Builder()
+                            .addStroke(new android.accessibilityservice.GestureDescription.StrokeDescription(p, 0, 500))
+                            .build();
+            if (dispatchGesture(g, null, null)) return;
+        } catch (Exception ignored) {
+        }
+        scrollForwardLargest();
+    }
+
+    /** Fallback when gestures are unavailable: scroll the biggest scrollable thing on screen. */
+    private void scrollForwardLargest() {
+        AccessibilityNodeInfo best = null;
+        long bestArea = 0;
+        try {
+            for (AccessibilityWindowInfo w : getWindows()) {
+                AccessibilityNodeInfo root = w.getRoot();
+                if (root == null || isOurs(root)) continue;
+                java.util.ArrayDeque<AccessibilityNodeInfo> q = new java.util.ArrayDeque<>();
+                q.add(root);
+                int seen = 0;
+                while (!q.isEmpty() && seen++ < 3000) {
+                    AccessibilityNodeInfo n = q.poll();
+                    if (n.isScrollable() && n.isVisibleToUser()) {
+                        Rect r = new Rect();
+                        n.getBoundsInScreen(r);
+                        long area = (long) r.width() * r.height();
+                        if (area > bestArea) {
+                            bestArea = area;
+                            best = n;
+                        }
+                    }
+                    for (int i = 0; i < n.getChildCount(); i++) {
+                        AccessibilityNodeInfo c = n.getChild(i);
+                        if (c != null) q.add(c);
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        if (best != null) best.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
+    }
 
     private void scanNow() {
         ArrayList<FbParser.Item> items = new ArrayList<>();
@@ -165,6 +273,11 @@ public class FbCommentService extends AccessibilityService {
         } catch (Exception ignored) {
         }
         scans++;
+        lastHadFacebook = false;
+        for (String src : sources) if (src.startsWith("com.facebook")) lastHadFacebook = true;
+        StringBuilder sig = new StringBuilder();
+        for (FbParser.Item it : items) sig.append(it.s).append('|').append(it.t).append('\n');
+        lastSig = Integer.toHexString(sig.toString().hashCode()) + ":" + items.size();
         int w = getResources().getDisplayMetrics().widthPixels;
         collector.add(FbParser.parse(items, w), w);
 
@@ -252,6 +365,11 @@ public class FbCommentService extends AccessibilityService {
         Rect r = new Rect();
         n.getBoundsInScreen(r);
         boolean onScreen = r.height() > 0 && r.bottom > 0 && r.top < screenH;
+        if (onScreen && (FbParser.isLoadMoreComments(t) || (t.isEmpty() && FbParser.isLoadMoreComments(d)))) {
+            int cy = r.centerY();
+            if (cy > screenH * 6 / 100 && cy < screenH * 92 / 100 && clickUp(n, 3)) count[0]++;
+            return;
+        }
         if (onScreen && (FbParser.isMoreLabel(t) || (t.isEmpty() && FbParser.isMoreLabel(d)))) {
             // a standalone link: skip the very top/bottom of the screen (tab bars, toolbars)
             int cy = r.centerY();
@@ -259,8 +377,9 @@ public class FbCommentService extends AccessibilityService {
             return;
         }
         if (onScreen && (FbParser.endsWithMore(t) || (t.isEmpty() && FbParser.endsWithMore(d)))) {
-            // "… Altro" inside the comment text: tap the link span, else the text itself
-            if (clickMoreSpan(text) || clickUp(n, 2)) count[0]++;
+            // "… Altro" inside the comment text: tap the link span, else the text itself (once)
+            String key = t.isEmpty() ? d : t;
+            if (tapped.add(key) && (clickMoreSpan(text) || clickUp(n, 2))) count[0]++;
             return;
         }
         for (int i = 0; i < n.getChildCount(); i++) expandIn(n.getChild(i), screenH, count, depth + 1);
@@ -378,24 +497,20 @@ public class FbCommentService extends AccessibilityService {
         label.setPadding(0, 0, dp(8), 0);
         box.addView(label);
 
-        moreButton = smallButton("Altro", 0xFF5C6BC0);
-        moreButton.setOnClickListener(new View.OnClickListener() {
+        autoButton = smallButton("AUTO", 0xFF5C6BC0);
+        autoButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int n = expandMore();
-                Toast.makeText(FbCommentService.this, n == 0
-                        ? "Nessun «Altro» da aprire su questa schermata"
-                        : "Aperti " + n + " «Altro»", Toast.LENGTH_SHORT).show();
-                if (recording) {
-                    handler.removeCallbacks(tick);
-                    handler.postDelayed(tick, 600); // read the expanded texts
-                }
+                startAuto();
+                Toast.makeText(FbCommentService.this,
+                        "AUTO: apro gli «Altro», leggo e scorro fino in fondo. Non toccare lo schermo.",
+                        Toast.LENGTH_LONG).show();
             }
         });
         LinearLayout.LayoutParams gap = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         gap.rightMargin = dp(6);
-        box.addView(moreButton, gap);
+        box.addView(autoButton, gap);
 
         mainButton = smallButton("START", 0xFF43A047);
         mainButton.setOnClickListener(new View.OnClickListener() {
@@ -460,11 +575,13 @@ public class FbCommentService extends AccessibilityService {
         if (bar == null) return;
         if (recording) {
             int n = collector == null ? 0 : collector.mainComments().size();
-            label.setText("● " + n + " commenti · " + texts.size() + " testi");
+            label.setText((auto ? "AUTO ● " : "● ") + n + " commenti · " + texts.size() + " testi");
+            autoButton.setVisibility(View.GONE);
             mainButton.setText("STOP");
             mainButton.setBackground(round(0xFFFF7043, dp(20)));
         } else {
             label.setText("Clip  ⇕");
+            autoButton.setVisibility(View.VISIBLE);
             mainButton.setText("START");
             mainButton.setBackground(round(0xFF43A047, dp(20)));
         }
@@ -479,7 +596,7 @@ public class FbCommentService extends AccessibilityService {
         bar = null;
         label = null;
         mainButton = null;
-        moreButton = null;
+        autoButton = null;
     }
 
     public boolean isBarVisible() {

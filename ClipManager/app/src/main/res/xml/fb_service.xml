@@ -3,6 +3,7 @@
     android:accessibilityEventTypes="typeWindowContentChanged|typeViewScrolled|typeWindowStateChanged|typeWindowsChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:accessibilityFlags="flagIncludeNotImportantViews|flagReportViewIds|flagRetrieveInteractiveWindows"
+    android:canPerformGestures="true"
     android:canRetrieveWindowContent="true"
     android:description="@string/fb_service_desc"
     android:notificationTimeout="200" />

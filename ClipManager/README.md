@@ -24,16 +24,16 @@ Ogni lista genera automaticamente un file `.txt` sul telefono.
 Menu ⋮ → **Commenti Facebook**. La prima volta va attivato il servizio di accessibilità
 «Clip Manager – Commenti Facebook» (su Android 13+ prima: Info app → ⋮ → «Consenti impostazioni con limitazioni»).
 
-Una volta attivo compare una barra blu galleggiante (trascinabile su/giù dalla scritta):
+Una volta attivo compare una barra blu galleggiante (trascinabile su/giù dalla scritta) con due modi:
 
-1. Apri il post Facebook e premi **START**.
-2. Scorri piano tutti i commenti: la barra conta commenti e testi letti.
-3. Premi **STOP**: i commenti principali (senza risposte) finiscono nella lista «Commenti FB gg-mm hh.mm»
-   come `Mario R.: testo`. Se non riconosce nessun commento, salva comunque tutto il testo letto
-   nella lista «Testo schermo gg-mm hh.mm».
+- **AUTO** (consigliato): apri il post e premi AUTO, poi non toccare lo schermo. L'app apre da sola tutti
+  gli «Altro» e i «Visualizza altri commenti», legge, scorre, e ripete fino in fondo; poi salva da sola.
+  Puoi interrompere con STOP in qualsiasi momento (salva quello letto fino a lì).
+- **START / STOP**: scorri tu; gli «Altro» visibili vengono aperti da soli mentre scorri.
 
-Il tasto **Altro** della barra tocca tutti i "Altro" / "Leggi altro" / "See more" visibili in quel momento,
-così i commenti lunghi vengono letti per intero: premilo dopo ogni scorrimento, prima di andare avanti.
+I commenti principali (senza risposte) finiscono nella lista «Commenti FB gg-mm hh.mm» come `Mario R.: testo`.
+Se non riconosce nessun commento salva tutto il testo letto nella lista «Testo schermo gg-mm hh.mm».
+Per avere tutti i commenti e non solo i «più pertinenti», scegli prima «Tutti i commenti» nell'ordinamento di Facebook.
 
 Legge tutto ciò che c'è sullo schermo, ma solo tra START e STOP. ✕ chiude la barra (si riapre dal menu
 o dal riquadro **Commenti FB** nella tendina). Ogni STOP salva anche `Documents/ClipManager/facebook_debug.txt`
@@ -58,7 +58,7 @@ Scarica `release/ClipManager.apk` sul telefono e aprilo. Android chiederà di co
 Il progetto non usa Gradle: `build.sh` usa direttamente gli strumenti Android dei pacchetti Ubuntu/Debian.
 
 ```sh
-sudo apt-get install aapt apksigner zipalign dalvik-exchange android-sdk-platform-23
+sudo apt-get install aapt apksigner zipalign dalvik-exchange
 ./build.sh        # -> build/ClipManager.apk
 ```
 

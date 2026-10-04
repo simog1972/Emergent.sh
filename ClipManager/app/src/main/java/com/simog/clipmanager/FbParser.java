@@ -92,6 +92,16 @@ public final class FbParser {
         return MORE_LABEL.matcher(s.trim()).matches();
     }
 
+    private static final Pattern LOAD_MORE = Pattern.compile("(?i)^("
+            + "(visualizza|mostra|vedi|carica)\\s+(altri|ulteriori|i)?\\s*(\\d+\\s+)?(altri\\s+)?commenti(\\s+precedenti)?"
+            + "|(view|see|load)\\s+(\\d+\\s+)?(more|previous|earlier)\\s+(\\d+\\s+)?comments"
+            + ")\\b.*");
+
+    /** "Visualizza altri commenti" / "View more comments" (not replies). */
+    static boolean isLoadMoreComments(String s) {
+        return LOAD_MORE.matcher(s.trim()).matches();
+    }
+
     /** Text of a collapsed comment, ending with "… Altro". */
     static boolean endsWithMore(String s) {
         return MORE_SUFFIX.matcher(s).find();
