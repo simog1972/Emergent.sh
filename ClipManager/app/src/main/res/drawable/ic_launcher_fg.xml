@@ -1,0 +1,18 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- clipboard board -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M38,32h32a4,4 0,0 1,4 4v38a4,4 0,0 1,-4 4h-32a4,4 0,0 1,-4 -4v-38a4,4 0,0 1,4 -4z" />
+    <!-- clip on top -->
+    <path
+        android:fillColor="#FFFF7043"
+        android:pathData="M46,27h16a3,3 0,0 1,3 3v6h-22v-6a3,3 0,0 1,3 -3z" />
+    <!-- text lines -->
+    <path
+        android:fillColor="#FF3949AB"
+        android:pathData="M41,45h26v4h-26z M41,54h26v4h-26z M41,63h18v4h-18z" />
+</vector>
