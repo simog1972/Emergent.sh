@@ -28,6 +28,7 @@ public class ListActivity extends BaseActivity {
     private ArrayAdapter<Store.Clip> adapter;
     private TextView filePath;
     private Button btnActive;
+    private boolean reorder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +47,26 @@ public class ListActivity extends BaseActivity {
                 View v = super.getView(pos, convertView, parent);
                 Store.Clip c = getItem(pos);
                 v.findViewById(R.id.check).setVisibility(View.GONE);
+                v.findViewById(R.id.move_box).setVisibility(reorder ? View.VISIBLE : View.GONE);
+                final long cid = c.id;
+                View up = v.findViewById(R.id.move_up);
+                View down = v.findViewById(R.id.move_down);
+                up.setEnabled(pos > 0);
+                down.setEnabled(pos < getCount() - 1);
+                up.setAlpha(pos > 0 ? 1f : 0.25f);
+                down.setAlpha(pos < getCount() - 1 ? 1f : 0.25f);
+                up.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View b) {
+                        move(cid, -1);
+                    }
+                });
+                down.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View b) {
+                        move(cid, 1);
+                    }
+                });
                 ((TextView) v.findViewById(R.id.text)).setText(c.text);
                 ((TextView) v.findViewById(R.id.meta)).setText((pos + 1) + ".  " + formatTime(c.time));
                 return v;
@@ -108,11 +129,18 @@ public class ListActivity extends BaseActivity {
         btnActive.setText(active ? "■ Ferma raccolta" : "● Attiva");
         String path = l.filePath != null ? l.filePath
                 : "Documents/" + TxtExporter.FOLDER + "/" + TxtExporter.fileName(l);
-        filePath.setText((active ? "RACCOLTA ATTIVA – i nuovi clip arrivano qui\n" : "")
+        filePath.setText(reorder
+                ? "RIORDINA: usa ▲ ▼ per spostare i clip, poi premi «Fine» in alto.\nIl file TXT segue il nuovo ordine."
+                : (active ? "RACCOLTA ATTIVA – i nuovi clip arrivano qui\n" : "")
                 + "File: " + path + "\nTocca un clip per leggerlo tutto, tieni premuto per altre opzioni.");
+        invalidateOptionsMenu();
         clips = store.clipsOf(listId);
         adapter.clear();
         adapter.addAll(clips);
+    }
+
+    private void move(long clipId, int delta) {
+        if (store.moveInList(clipId, delta)) refresh();
     }
 
     private void share() {
@@ -131,7 +159,8 @@ public class ListActivity extends BaseActivity {
 
     private void clipMenu(final Store.Clip c) {
         new AlertDialog.Builder(this)
-                .setItems(new String[]{"Copia", "Modifica", "Rimetti tra i Clip", "Elimina"},
+                .setItems(new String[]{"Copia", "Modifica", "Sposta in cima", "Sposta in fondo",
+                                "Rimetti tra i Clip", "Elimina"},
                         new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
@@ -149,6 +178,10 @@ public class ListActivity extends BaseActivity {
                                         }
                                     });
                                 } else if (which == 2) {
+                                    store.moveInList(c.id, Integer.MIN_VALUE);
+                                } else if (which == 3) {
+                                    store.moveInList(c.id, Integer.MAX_VALUE);
+                                } else if (which == 4) {
                                     store.moveClips(one, Store.INBOX);
                                 } else {
                                     store.deleteClips(one);
@@ -161,6 +194,8 @@ public class ListActivity extends BaseActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        menu.add(0, 3, 0, reorder ? "Fine" : "Riordina")
+                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         menu.add(0, 1, 0, "Rinomina");
         menu.add(0, 2, 0, "Elimina lista");
         return true;
@@ -174,6 +209,11 @@ public class ListActivity extends BaseActivity {
             return true;
         }
         if (l == null) return true;
+        if (item.getItemId() == 3) {
+            reorder = !reorder;
+            refresh();
+            return true;
+        }
         if (item.getItemId() == 1) {
             askText("Rinomina", l.name, false, null, new TextCallback() {
                 @Override

@@ -15,6 +15,8 @@ Ogni lista genera automaticamente un file `.txt` sul telefono.
 - **File TXT:** ogni lista è salvata in `Documents/ClipManager/<titolo>.txt` e si aggiorna da sola a ogni modifica
   (aggiunta, eliminazione, modifica, rinomina). Dalla lista puoi anche **Condividi TXT** o **Copia tutto**.
 - Dentro una lista tocca un clip per leggerlo per intero (con Copia e Modifica). Nella scheda CLIP tieni premuto → **Leggi tutto**.
+- **Cambiare l'ordine in una lista:** premi **Riordina** in alto e sposta i clip con ▲ ▼, poi **Fine**.
+  Oppure tieni premuto un clip → **Sposta in cima** / **Sposta in fondo**. Il file TXT segue il nuovo ordine.
 - Tieni premuto un clip o una lista per: copia, modifica, sposta, rinomina, elimina.
 
 ### Salvare senza aprire l'app

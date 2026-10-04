@@ -199,6 +199,30 @@ public final class Store {
         exportAll(touched);
     }
 
+    /**
+     * Moves a clip inside its list: delta -1/+1 swaps with the previous/next clip of the same
+     * list, Integer.MIN_VALUE / MAX_VALUE sends it to the top / bottom. Returns false at an edge.
+     */
+    public synchronized boolean moveInList(long clipId, int delta) {
+        Clip c = getClip(clipId);
+        if (c == null) return false;
+        List<Clip> same = clipsOf(c.listId);
+        int from = same.indexOf(c);
+        int to = delta == Integer.MIN_VALUE ? 0
+                : delta == Integer.MAX_VALUE ? same.size() - 1
+                : from + delta;
+        if (to < 0 || to >= same.size() || to == from) return false;
+        // list order is the order in the global array: put the clip where its new neighbour is
+        Clip target = same.get(to);
+        clips.remove(c);
+        int at = clips.indexOf(target);
+        clips.add(to > from ? at + 1 : at, c);
+        save();
+        ClipList l = getList(c.listId);
+        if (l != null) TxtExporter.write(app, this, l);
+        return true;
+    }
+
     public synchronized void deleteClips(Collection<Long> ids) {
         ArrayList<Long> touched = new ArrayList<>();
         for (Iterator<Clip> it = clips.iterator(); it.hasNext(); ) {
