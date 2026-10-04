@@ -168,7 +168,7 @@ public class MainActivity extends BaseActivity {
                                 + "   – seleziona un testo e scegli «Salva in Clip Manager» dal menu, oppure\n"
                                 + "   – usa «Condividi» → Clip Manager, oppure\n"
                                 + "   – aggiungi il riquadro «Salva clip» alle Impostazioni rapide (tendina) e toccalo dopo aver copiato.\n\n"
-                                + "• Tieni premuto un clip o una lista per altre opzioni.")
+                                + "• Tieni premuto un clip per leggerlo tutto o per altre opzioni; dentro una lista basta toccarlo.")
                         .setPositiveButton("OK", null)
                         .show();
                 return true;
@@ -301,14 +301,16 @@ public class MainActivity extends BaseActivity {
 
     private void clipMenu(final Store.Clip c) {
         new AlertDialog.Builder(this)
-                .setItems(new String[]{"Copia", "Modifica", "Elimina"},
+                .setItems(new String[]{"Leggi tutto", "Copia", "Modifica", "Elimina"},
                         new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 if (which == 0) {
+                                    showClip(c);
+                                } else if (which == 1) {
                                     store.copyToClipboard(MainActivity.this, c.text);
                                     toast("Copiato");
-                                } else if (which == 1) {
+                                } else if (which == 2) {
                                     askText("Modifica clip", c.text, true, null, new TextCallback() {
                                         @Override
                                         public void onText(String text, boolean checked) {

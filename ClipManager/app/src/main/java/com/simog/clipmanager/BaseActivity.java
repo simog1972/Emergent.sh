@@ -8,6 +8,8 @@ import android.view.WindowManager;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
@@ -106,6 +108,42 @@ public abstract class BaseActivity extends Activity {
         }
         d.show();
         input.requestFocus();
+    }
+
+    /** Shows the whole text of a clip (rows only show the first lines), selectable and scrollable. */
+    protected void showClip(final Store.Clip c) {
+        TextView tv = new TextView(this);
+        tv.setText(c.text);
+        tv.setTextIsSelectable(true);
+        tv.setTextSize(16);
+        tv.setTextColor(0xFF212121);
+        tv.setPadding(dp(20), dp(12), dp(20), dp(12));
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(tv);
+        new AlertDialog.Builder(this)
+                .setTitle(formatTime(c.time) + "  ·  " + c.text.length() + " caratteri")
+                .setView(scroll)
+                .setNegativeButton("Chiudi", null)
+                .setNeutralButton("Modifica", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        askText("Modifica clip", c.text, true, null, new TextCallback() {
+                            @Override
+                            public void onText(String text, boolean checked) {
+                                store.editClip(c.id, text);
+                                refresh();
+                            }
+                        });
+                    }
+                })
+                .setPositiveButton("Copia", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        store.copyToClipboard(BaseActivity.this, c.text);
+                        toast("Copiato negli appunti");
+                    }
+                })
+                .show();
     }
 
     protected void confirm(String message, final Runnable onYes) {

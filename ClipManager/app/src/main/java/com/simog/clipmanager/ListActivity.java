@@ -55,8 +55,7 @@ public class ListActivity extends BaseActivity {
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int pos, long id) {
-                store.copyToClipboard(ListActivity.this, clips.get(pos).text);
-                toast("Copiato negli appunti");
+                showClip(clips.get(pos));
             }
         });
         lv.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
@@ -110,7 +109,7 @@ public class ListActivity extends BaseActivity {
         String path = l.filePath != null ? l.filePath
                 : "Documents/" + TxtExporter.FOLDER + "/" + TxtExporter.fileName(l);
         filePath.setText((active ? "RACCOLTA ATTIVA – i nuovi clip arrivano qui\n" : "")
-                + "File: " + path + "\nTocca un clip per copiarlo, tieni premuto per altre opzioni.");
+                + "File: " + path + "\nTocca un clip per leggerlo tutto, tieni premuto per altre opzioni.");
         clips = store.clipsOf(listId);
         adapter.clear();
         adapter.addAll(clips);
