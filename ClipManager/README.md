@@ -19,20 +19,22 @@ Ogni lista genera automaticamente un file `.txt` sul telefono.
   Oppure tieni premuto un clip → **Sposta in cima** / **Sposta in fondo**. Il file TXT segue il nuovo ordine.
 - Tieni premuto un clip o una lista per: copia, modifica, sposta, rinomina, elimina.
 
-### Commenti di un post Facebook (app Facebook)
+### Barra START/STOP (commenti Facebook)
 
 Menu ⋮ → **Commenti Facebook**. La prima volta va attivato il servizio di accessibilità
-«Clip Manager – Commenti Facebook" (su Android 13+ prima: Info app → ⋮ → «Consenti impostazioni con limitazioni»).
+«Clip Manager – Commenti Facebook» (su Android 13+ prima: Info app → ⋮ → «Consenti impostazioni con limitazioni»).
 
-1. **Avvia** → si apre Facebook e compare un contatore blu con **STOP** (trascinabile).
-2. Apri il post e scorri piano tutti i commenti.
-3. **STOP** → i commenti principali (senza risposte) finiscono in una nuova lista «Commenti FB gg-mm hh.mm»,
-   nel formato `Mario R.: testo del commento`, con il suo TXT.
+Una volta attivo compare una barra blu galleggiante (trascinabile su/giù dalla scritta):
 
-In alternativa apri prima il post e usa il riquadro **Commenti FB** nella tendina.
-Legge solo mentre il contatore è visibile e solo nell'app Facebook. Ogni volta salva anche
-`Documents/ClipManager/facebook_debug.txt` (il testo grezzo visto sullo schermo) per mettere a punto il riconoscimento.
-I commenti lunghi compressi ("… Altro") vanno aperti toccandoli, altrimenti vengono salvati troncati.
+1. Apri il post Facebook e premi **START**.
+2. Scorri piano tutti i commenti: la barra conta commenti e testi letti.
+3. Premi **STOP**: i commenti principali (senza risposte) finiscono nella lista «Commenti FB gg-mm hh.mm»
+   come `Mario R.: testo`. Se non riconosce nessun commento, salva comunque tutto il testo letto
+   nella lista «Testo schermo gg-mm hh.mm».
+
+Legge tutto ciò che c'è sullo schermo, ma solo tra START e STOP. ✕ chiude la barra (si riapre dal menu
+o dal riquadro **Commenti FB** nella tendina). Ogni STOP salva anche `Documents/ClipManager/facebook_debug.txt`
+con il testo grezzo letto, utile per mettere a punto il riconoscimento.
 
 ### Salvare senza aprire l'app
 

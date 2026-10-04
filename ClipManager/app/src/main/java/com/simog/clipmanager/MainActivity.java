@@ -235,7 +235,7 @@ public class MainActivity extends BaseActivity {
     private void facebookMode() {
         final FbCommentService svc = FbCommentService.get();
         if (svc == null) {
-            String msg = "La modalità Facebook legge i commenti mentre li scorri nell'app Facebook.\n\n"
+            String msg = "La barra START/STOP legge il testo sullo schermo (es. i commenti di un post Facebook) tra START e STOP.\n\n"
                     + "Serve attivarla una volta:\n"
                     + "1. Premi «Impostazioni» → App installate (o Servizi scaricati) → "
                     + "«Clip Manager – Commenti Facebook» → attiva.\n";
@@ -243,7 +243,7 @@ public class MainActivity extends BaseActivity {
                 msg += "\nSe l'interruttore è grigio o compare «Impostazione con limitazioni»: premi «Info app», "
                         + "poi il menu ⋮ in alto a destra → «Consenti impostazioni con limitazioni», e riprova.\n";
             }
-            msg += "\nLegge solo mentre il contatore blu con STOP è visibile.";
+            msg += "\nDopo l'attivazione compare la barra blu con START.";
             AlertDialog.Builder b = new AlertDialog.Builder(this)
                     .setTitle("Commenti Facebook")
                     .setMessage(msg)
@@ -266,34 +266,17 @@ public class MainActivity extends BaseActivity {
             b.show();
             return;
         }
-        if (svc.isRecording()) {
-            toast("Modalità Facebook già avviata: premi STOP sul contatore blu");
-            return;
+        svc.showBar();
+        toast("Barra aperta: premi START, scorri i commenti, poi STOP");
+        Intent fb = new Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_LAUNCHER)
+                .setPackage(FbCommentService.FB_PACKAGE)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            startActivity(fb);
+        } catch (Exception ignored) {
+            // Facebook not installed: the bar works on any app anyway
         }
-        new AlertDialog.Builder(this)
-                .setTitle("Commenti Facebook")
-                .setMessage("1. Premi «Avvia»: si apre Facebook e compare un contatore blu.\n"
-                        + "2. Apri il post e i suoi commenti.\n"
-                        + "3. Scorri piano fino in fondo (se serve premi «Visualizza altri commenti»).\n"
-                        + "4. Premi STOP: i commenti principali finiscono in una nuova lista con il suo TXT.\n\n"
-                        + "Puoi anche aprire prima il post e usare il riquadro «Commenti FB» nella tendina.")
-                .setNegativeButton("Annulla", null)
-                .setPositiveButton("Avvia", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface d, int w) {
-                        svc.start();
-                        Intent fb = new Intent(Intent.ACTION_MAIN)
-                                .addCategory(Intent.CATEGORY_LAUNCHER)
-                                .setPackage(FbCommentService.FB_PACKAGE)
-                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        try {
-                            startActivity(fb);
-                        } catch (Exception e) {
-                            toast("App Facebook non trovata: aprila tu, il contatore è attivo");
-                        }
-                    }
-                })
-                .show();
     }
 
     private void openList(long id) {

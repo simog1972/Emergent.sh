@@ -69,8 +69,13 @@ public final class FbParser {
             "\\s*(…|\\.\\.\\.)\\s*(altro|see more|mostra altro|continua a leggere)\\s*$",
             Pattern.CASE_INSENSITIVE);
 
+    private static final Pattern ACTION_IN_ROW = Pattern.compile("(?is).*\\b(rispondi|reply)\\b.*");
+
+    /** "Rispondi", or a short action row that contains it ("2 h  Mi piace  Rispondi"). */
     static boolean isAction(String s) {
-        return ACTION.matcher(s.trim()).matches();
+        String t = s.trim();
+        return ACTION.matcher(t).matches()
+                || (t.length() <= 40 && ACTION_IN_ROW.matcher(t).matches() && !t.contains("?"));
     }
 
     static boolean isJunk(String s) {

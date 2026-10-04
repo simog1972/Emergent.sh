@@ -39,8 +39,9 @@ public class FbTileService extends TileService {
         if (s.isRecording()) {
             s.stop();
         } else {
+            s.showBar();
             s.start();
-            Toast.makeText(this, "Modalità Facebook avviata: scorri i commenti, poi STOP",
+            Toast.makeText(this, "Lettura avviata: scorri i commenti, poi STOP",
                     Toast.LENGTH_LONG).show();
         }
         onStartListening();

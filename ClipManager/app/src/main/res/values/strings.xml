@@ -5,5 +5,5 @@
     <string name="tile_label">Salva clip</string>
     <string name="fb_tile_label">Commenti FB</string>
     <string name="fb_service_label">Clip Manager – Commenti Facebook</string>
-    <string name="fb_service_desc">Legge il testo dei commenti nell\'app Facebook SOLO mentre la «Modalità Facebook» è avviata (contatore blu con STOP), per salvarli in una lista di Clip Manager. Nient\'altro viene letto, e nulla viene inviato da nessuna parte.</string>
+    <string name="fb_service_desc">Mostra la barra START/STOP di Clip Manager. Legge il testo sullo schermo SOLO tra START e STOP, per salvare i commenti (es. di un post Facebook) in una lista. Nulla viene inviato da nessuna parte.</string>
 </resources>
