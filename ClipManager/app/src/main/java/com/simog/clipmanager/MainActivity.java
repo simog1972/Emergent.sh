@@ -5,6 +5,8 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.provider.Settings;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Menu;
@@ -25,6 +27,7 @@ import java.util.List;
 
 public class MainActivity extends BaseActivity {
 
+    public static final String EXTRA_FB_HELP = "fb_help";
     private static final int REQ_STORAGE = 1;
 
     private boolean showLists;
@@ -122,6 +125,13 @@ public class MainActivity extends BaseActivity {
                 != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQ_STORAGE);
         }
+        if (getIntent().getBooleanExtra(EXTRA_FB_HELP, false)) facebookMode();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent.getBooleanExtra(EXTRA_FB_HELP, false)) facebookMode();
     }
 
     @Override
@@ -134,6 +144,7 @@ public class MainActivity extends BaseActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        menu.add(0, 5, 0, "Commenti Facebook");
         menu.add(0, 1, 0, "Seleziona tutti");
         menu.add(0, 2, 0, "Deseleziona");
         menu.add(0, 3, 0, "Rigenera tutti i TXT");
@@ -156,6 +167,9 @@ public class MainActivity extends BaseActivity {
             case 3:
                 store.exportAllLists();
                 toast("File TXT aggiornati in Documents/" + TxtExporter.FOLDER);
+                return true;
+            case 5:
+                facebookMode();
                 return true;
             case 4:
                 new AlertDialog.Builder(this)
@@ -217,6 +231,70 @@ public class MainActivity extends BaseActivity {
     }
 
     // ---------------------------------------------------------------- actions
+
+    private void facebookMode() {
+        final FbCommentService svc = FbCommentService.get();
+        if (svc == null) {
+            String msg = "La modalità Facebook legge i commenti mentre li scorri nell'app Facebook.\n\n"
+                    + "Serve attivarla una volta:\n"
+                    + "1. Premi «Impostazioni» → App installate (o Servizi scaricati) → "
+                    + "«Clip Manager – Commenti Facebook» → attiva.\n";
+            if (Build.VERSION.SDK_INT >= 33) {
+                msg += "\nSe l'interruttore è grigio o compare «Impostazione con limitazioni»: premi «Info app», "
+                        + "poi il menu ⋮ in alto a destra → «Consenti impostazioni con limitazioni», e riprova.\n";
+            }
+            msg += "\nLegge solo mentre il contatore blu con STOP è visibile.";
+            AlertDialog.Builder b = new AlertDialog.Builder(this)
+                    .setTitle("Commenti Facebook")
+                    .setMessage(msg)
+                    .setNegativeButton("Annulla", null)
+                    .setPositiveButton("Impostazioni", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface d, int w) {
+                            startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+                        }
+                    });
+            if (Build.VERSION.SDK_INT >= 33) {
+                b.setNeutralButton("Info app", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface d, int w) {
+                        startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.fromParts("package", getPackageName(), null)));
+                    }
+                });
+            }
+            b.show();
+            return;
+        }
+        if (svc.isRecording()) {
+            toast("Modalità Facebook già avviata: premi STOP sul contatore blu");
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Commenti Facebook")
+                .setMessage("1. Premi «Avvia»: si apre Facebook e compare un contatore blu.\n"
+                        + "2. Apri il post e i suoi commenti.\n"
+                        + "3. Scorri piano fino in fondo (se serve premi «Visualizza altri commenti»).\n"
+                        + "4. Premi STOP: i commenti principali finiscono in una nuova lista con il suo TXT.\n\n"
+                        + "Puoi anche aprire prima il post e usare il riquadro «Commenti FB» nella tendina.")
+                .setNegativeButton("Annulla", null)
+                .setPositiveButton("Avvia", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface d, int w) {
+                        svc.start();
+                        Intent fb = new Intent(Intent.ACTION_MAIN)
+                                .addCategory(Intent.CATEGORY_LAUNCHER)
+                                .setPackage(FbCommentService.FB_PACKAGE)
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        try {
+                            startActivity(fb);
+                        } catch (Exception e) {
+                            toast("App Facebook non trovata: aprila tu, il contatore è attivo");
+                        }
+                    }
+                })
+                .show();
+    }
 
     private void openList(long id) {
         startActivity(new Intent(this, ListActivity.class).putExtra(ListActivity.EXTRA_ID, id));

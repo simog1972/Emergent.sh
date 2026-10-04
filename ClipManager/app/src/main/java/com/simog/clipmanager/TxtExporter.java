@@ -3,6 +3,7 @@ package com.simog.clipmanager;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
@@ -51,13 +52,33 @@ public final class TxtExporter {
     /** (Re)writes the list's .txt. Failures are swallowed: the app data is the source of truth. */
     public static void write(Context c, Store store, Store.ClipList l) {
         byte[] bytes = content(store, l).getBytes(StandardCharsets.UTF_8);
+        String[] res = writeFile(c, l.fileUri, fileName(l), bytes);
+        if (res != null && (!res[0].equals(l.fileUri) || !res[1].equals(l.filePath))) {
+            store.setFile(l, res[0], res[1]);
+        }
+    }
+
+    /** Writes a loose file (e.g. the Facebook debug dump), overwriting it on later calls. */
+    public static void writeRaw(Context c, String fileName, String content) {
+        SharedPreferences prefs = c.getSharedPreferences("raw_files", Context.MODE_PRIVATE);
+        String[] res = writeFile(c, prefs.getString(fileName, null), fileName,
+                content.getBytes(StandardCharsets.UTF_8));
+        if (res != null) prefs.edit().putString(fileName, res[0]).apply();
+    }
+
+    /**
+     * Writes Documents/ClipManager/fileName, overwriting oldUri if it is still there.
+     * Returns {uri, readable path} or null on failure.
+     */
+    private static String[] writeFile(Context c, String oldUri, String fileName, byte[] bytes) {
         try {
             if (Build.VERSION.SDK_INT >= 29) {
-                writeMediaStore(c, store, l, bytes);
+                return writeMediaStore(c, oldUri, fileName, bytes);
             } else {
-                writeLegacy(c, store, l, bytes);
+                return writeLegacy(c, fileName, bytes);
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            return null;
         }
     }
 
@@ -77,52 +98,54 @@ public final class TxtExporter {
         }
     }
 
-    private static void writeMediaStore(Context c, Store store, Store.ClipList l, byte[] bytes)
+    private static String[] writeMediaStore(Context c, String oldUri, String fileName, byte[] bytes)
             throws Exception {
         ContentResolver cr = c.getContentResolver();
-        if (l.fileUri != null) {
+        String dir = Environment.DIRECTORY_DOCUMENTS + "/" + FOLDER;
+        if (oldUri != null) {
             // overwrite the file we created earlier (fails if the user deleted it meanwhile)
-            try (OutputStream out = cr.openOutputStream(Uri.parse(l.fileUri), "wt")) {
+            Uri uri = Uri.parse(oldUri);
+            try (OutputStream out = cr.openOutputStream(uri, "wt")) {
                 if (out != null) {
                     out.write(bytes);
-                    return;
+                    return new String[]{oldUri, dir + "/" + displayName(cr, uri, fileName)};
                 }
             } catch (Exception ignored) {
             }
         }
         ContentValues v = new ContentValues();
-        v.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName(l));
+        v.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
         v.put(MediaStore.MediaColumns.MIME_TYPE, "text/plain");
-        v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS + "/" + FOLDER);
+        v.put(MediaStore.MediaColumns.RELATIVE_PATH, dir);
         Uri uri = cr.insert(MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), v);
-        if (uri == null) return;
+        if (uri == null) return null;
         try (OutputStream out = cr.openOutputStream(uri, "wt")) {
-            if (out == null) return;
+            if (out == null) return null;
             out.write(bytes);
         }
-        // MediaStore may have picked another name ("Spesa (1).txt") if one already existed
-        String name = fileName(l);
-        try (Cursor cur = cr.query(uri, new String[]{MediaStore.MediaColumns.DISPLAY_NAME},
-                null, null, null)) {
-            if (cur != null && cur.moveToFirst()) name = cur.getString(0);
-        } catch (Exception ignored) {
-        }
-        store.setFile(l, uri.toString(), Environment.DIRECTORY_DOCUMENTS + "/" + FOLDER + "/" + name);
+        return new String[]{uri.toString(), dir + "/" + displayName(cr, uri, fileName)};
     }
 
-    private static void writeLegacy(Context c, Store store, Store.ClipList l, byte[] bytes)
-            throws Exception {
+    /** MediaStore may have picked another name ("Spesa (1).txt") if one already existed. */
+    private static String displayName(ContentResolver cr, Uri uri, String fallback) {
+        try (Cursor cur = cr.query(uri, new String[]{MediaStore.MediaColumns.DISPLAY_NAME},
+                null, null, null)) {
+            if (cur != null && cur.moveToFirst() && cur.getString(0) != null) return cur.getString(0);
+        } catch (Exception ignored) {
+        }
+        return fallback;
+    }
+
+    private static String[] writeLegacy(Context c, String fileName, byte[] bytes) throws Exception {
         File dir = new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_DOCUMENTS), FOLDER);
-        if (!dir.isDirectory() && !dir.mkdirs()) return;
-        File f = new File(dir, fileName(l));
+        if (!dir.isDirectory() && !dir.mkdirs()) return null;
+        File f = new File(dir, fileName);
         try (OutputStream out = new FileOutputStream(f, false)) {
             out.write(bytes);
         }
         MediaScannerConnection.scanFile(c, new String[]{f.getAbsolutePath()}, null, null);
-        String uri = Uri.fromFile(f).toString();
-        if (!uri.equals(l.fileUri)) {
-            store.setFile(l, uri, Environment.DIRECTORY_DOCUMENTS + "/" + FOLDER + "/" + f.getName());
-        }
+        return new String[]{Uri.fromFile(f).toString(),
+                Environment.DIRECTORY_DOCUMENTS + "/" + FOLDER + "/" + f.getName()};
     }
 }

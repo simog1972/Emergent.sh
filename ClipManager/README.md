@@ -19,6 +19,21 @@ Ogni lista genera automaticamente un file `.txt` sul telefono.
   Oppure tieni premuto un clip → **Sposta in cima** / **Sposta in fondo**. Il file TXT segue il nuovo ordine.
 - Tieni premuto un clip o una lista per: copia, modifica, sposta, rinomina, elimina.
 
+### Commenti di un post Facebook (app Facebook)
+
+Menu ⋮ → **Commenti Facebook**. La prima volta va attivato il servizio di accessibilità
+«Clip Manager – Commenti Facebook" (su Android 13+ prima: Info app → ⋮ → «Consenti impostazioni con limitazioni»).
+
+1. **Avvia** → si apre Facebook e compare un contatore blu con **STOP** (trascinabile).
+2. Apri il post e scorri piano tutti i commenti.
+3. **STOP** → i commenti principali (senza risposte) finiscono in una nuova lista «Commenti FB gg-mm hh.mm»,
+   nel formato `Mario R.: testo del commento`, con il suo TXT.
+
+In alternativa apri prima il post e usa il riquadro **Commenti FB** nella tendina.
+Legge solo mentre il contatore è visibile e solo nell'app Facebook. Ogni volta salva anche
+`Documents/ClipManager/facebook_debug.txt` (il testo grezzo visto sullo schermo) per mettere a punto il riconoscimento.
+I commenti lunghi compressi ("… Altro") vanno aperti toccandoli, altrimenti vengono salvati troncati.
+
 ### Salvare senza aprire l'app
 
 Android (dalla versione 10) non permette a nessuna app di leggere gli appunti in background, quindi ci sono tre scorciatoie:

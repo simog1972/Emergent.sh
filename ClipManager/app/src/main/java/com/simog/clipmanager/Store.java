@@ -118,6 +118,23 @@ public final class Store {
         return "Clip";
     }
 
+    /** Appends several texts to a list in one go (one save, one .txt rewrite). */
+    public synchronized void addToList(long listId, List<String> texts) {
+        ClipList l = getList(listId);
+        if (l == null) return;
+        long now = System.currentTimeMillis();
+        for (String t : texts) {
+            Clip clip = new Clip();
+            clip.id = nextId++;
+            clip.text = t;
+            clip.time = now;
+            clip.listId = listId;
+            clips.add(clip);
+        }
+        save();
+        TxtExporter.write(app, this, l);
+    }
+
     // ---------------------------------------------------------------- queries
 
     public synchronized List<Clip> clipsOf(long listId) {
