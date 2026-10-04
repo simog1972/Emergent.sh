@@ -83,6 +83,20 @@ public final class FbParser {
         return t.isEmpty() || JUNK.matcher(t).matches() || JUNK_PREFIX.matcher(t).matches();
     }
 
+    private static final Pattern MORE_LABEL = Pattern.compile(
+            "(?i)^(…|\\.\\.\\.)?\\s*(altro|leggi altro|mostra altro|visualizza altro|continua a leggere"
+            + "|see more|read more|show more)\\s*$");
+
+    /** A standalone "Altro" / "See more" link. */
+    static boolean isMoreLabel(String s) {
+        return MORE_LABEL.matcher(s.trim()).matches();
+    }
+
+    /** Text of a collapsed comment, ending with "… Altro". */
+    static boolean endsWithMore(String s) {
+        return MORE_SUFFIX.matcher(s).find();
+    }
+
     /** Removes the "… Altro" that marks a collapsed long comment. */
     static String stripMore(String s) {
         return MORE_SUFFIX.matcher(s).replaceAll("…").trim();

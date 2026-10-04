@@ -10,6 +10,8 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
+import android.text.Spanned;
+import android.text.style.ClickableSpan;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -56,6 +58,7 @@ public class FbCommentService extends AccessibilityService {
     private WindowManager.LayoutParams barParams;
     private TextView label;
     private Button mainButton;
+    private Button moreButton;
 
     public static FbCommentService get() {
         return instance;
@@ -211,6 +214,89 @@ public class FbCommentService extends AccessibilityService {
         return childHasText || s != null;
     }
 
+    // ---------------------------------------------------------------- "Altro" expander
+
+    /**
+     * Taps every "Altro" / "See more" visible on screen (not in our bar, not in system UI).
+     * Returns how many were tapped.
+     */
+    public int expandMore() {
+        int screenH = getResources().getDisplayMetrics().heightPixels;
+        int[] count = {0};
+        try {
+            List<AccessibilityWindowInfo> windows = getWindows();
+            boolean any = false;
+            for (AccessibilityWindowInfo w : windows) {
+                if (w.getType() == AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY
+                        || w.getType() == AccessibilityWindowInfo.TYPE_SYSTEM) continue;
+                AccessibilityNodeInfo root = w.getRoot();
+                if (root == null || isOurs(root)) continue;
+                any = true;
+                expandIn(root, screenH, count, 0);
+            }
+            if (!any) {
+                AccessibilityNodeInfo root = getRootInActiveWindow();
+                if (root != null && !isOurs(root)) expandIn(root, screenH, count, 0);
+            }
+        } catch (Exception ignored) {
+        }
+        return count[0];
+    }
+
+    private void expandIn(AccessibilityNodeInfo n, int screenH, int[] count, int depth) {
+        if (n == null || depth > 80) return;
+        CharSequence text = n.getText();
+        CharSequence desc = n.getContentDescription();
+        String t = text != null ? text.toString() : "";
+        String d = desc != null ? desc.toString() : "";
+        Rect r = new Rect();
+        n.getBoundsInScreen(r);
+        boolean onScreen = r.height() > 0 && r.bottom > 0 && r.top < screenH;
+        if (onScreen && (FbParser.isMoreLabel(t) || (t.isEmpty() && FbParser.isMoreLabel(d)))) {
+            // a standalone link: skip the very top/bottom of the screen (tab bars, toolbars)
+            int cy = r.centerY();
+            if (cy > screenH * 6 / 100 && cy < screenH * 92 / 100 && clickUp(n, 3)) count[0]++;
+            return;
+        }
+        if (onScreen && (FbParser.endsWithMore(t) || (t.isEmpty() && FbParser.endsWithMore(d)))) {
+            // "… Altro" inside the comment text: tap the link span, else the text itself
+            if (clickMoreSpan(text) || clickUp(n, 2)) count[0]++;
+            return;
+        }
+        for (int i = 0; i < n.getChildCount(); i++) expandIn(n.getChild(i), screenH, count, depth + 1);
+    }
+
+    /** Clicks the node, or its nearest clickable ancestor within maxUp levels. */
+    private static boolean clickUp(AccessibilityNodeInfo n, int maxUp) {
+        AccessibilityNodeInfo cur = n;
+        for (int i = 0; cur != null && i <= maxUp; i++) {
+            if (cur.isClickable()) return cur.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+            cur = cur.getParent();
+        }
+        return false;
+    }
+
+    /** Android 8+: links inside a node's text are exposed as clickable spans we can trigger. */
+    private static boolean clickMoreSpan(CharSequence text) {
+        if (!(text instanceof Spanned)) return false;
+        Spanned sp = (Spanned) text;
+        ClickableSpan[] spans = sp.getSpans(0, sp.length(), ClickableSpan.class);
+        for (int i = spans.length - 1; i >= 0; i--) {
+            int a = sp.getSpanStart(spans[i]);
+            int b = sp.getSpanEnd(spans[i]);
+            if (a < 0 || b <= a) continue;
+            if (FbParser.isMoreLabel(sp.subSequence(a, b).toString())) {
+                try {
+                    spans[i].onClick(null);
+                    return true;
+                } catch (Exception ignored) {
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
+
     private void save() {
         List<FbParser.Comment> comments = collector.mainComments();
         String stamp = new SimpleDateFormat("dd-MM HH.mm", Locale.ITALY).format(new Date());
@@ -291,6 +377,25 @@ public class FbCommentService extends AccessibilityService {
         label.setTextSize(14);
         label.setPadding(0, 0, dp(8), 0);
         box.addView(label);
+
+        moreButton = smallButton("Altro", 0xFF5C6BC0);
+        moreButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int n = expandMore();
+                Toast.makeText(FbCommentService.this, n == 0
+                        ? "Nessun «Altro» da aprire su questa schermata"
+                        : "Aperti " + n + " «Altro»", Toast.LENGTH_SHORT).show();
+                if (recording) {
+                    handler.removeCallbacks(tick);
+                    handler.postDelayed(tick, 600); // read the expanded texts
+                }
+            }
+        });
+        LinearLayout.LayoutParams gap = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        gap.rightMargin = dp(6);
+        box.addView(moreButton, gap);
 
         mainButton = smallButton("START", 0xFF43A047);
         mainButton.setOnClickListener(new View.OnClickListener() {
@@ -374,6 +479,7 @@ public class FbCommentService extends AccessibilityService {
         bar = null;
         label = null;
         mainButton = null;
+        moreButton = null;
     }
 
     public boolean isBarVisible() {

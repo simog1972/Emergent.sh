@@ -32,6 +32,9 @@ Una volta attivo compare una barra blu galleggiante (trascinabile su/giù dalla 
    come `Mario R.: testo`. Se non riconosce nessun commento, salva comunque tutto il testo letto
    nella lista «Testo schermo gg-mm hh.mm».
 
+Il tasto **Altro** della barra tocca tutti i "Altro" / "Leggi altro" / "See more" visibili in quel momento,
+così i commenti lunghi vengono letti per intero: premilo dopo ogni scorrimento, prima di andare avanti.
+
 Legge tutto ciò che c'è sullo schermo, ma solo tra START e STOP. ✕ chiude la barra (si riapre dal menu
 o dal riquadro **Commenti FB** nella tendina). Ogni STOP salva anche `Documents/ClipManager/facebook_debug.txt`
 con il testo grezzo letto, utile per mettere a punto il riconoscimento.
